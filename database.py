@@ -176,8 +176,9 @@ class BaseMixin(object):
             instance._jsoninfo = json.dumps(instance.info if hasattr(instance, 'info') else {})
         if isinstance(instance, Builder):
             instance._builders = json.dumps(instance.builders)
-            b = instance._context.builders[instance.internal_name]
-            instance.isPerf = b.get('isPerf', False)
+            if instance.internal_name in instance._context.builders:
+                b = instance._context.builders[instance.internal_name]
+                instance.isPerf = b.get('isPerf', False)
 
     @staticmethod
     def update_time(mapper, connection, instance):
@@ -196,8 +197,9 @@ class BaseMixin(object):
             instance.info = json.loads(instance._jsoninfo) if instance._jsoninfo is not None else {}
         if isinstance(instance, Builder):
             instance.builders = json.loads(instance._builders) if instance._builders is not None else []
-            b = instance._context.builders[instance.internal_name]
-            instance.isPerf = b.get('isPerf', False)
+            if instance.internal_name in instance._context.builders:
+                b = instance._context.builders[instance.internal_name]
+                instance.isPerf = b.get('isPerf', False)
 
     @classmethod
     def register(cls):
