@@ -35,6 +35,7 @@ class ApiData(AccessorMixin):
             def fn():
                 self.showOperations = yield self.authz.actionAllowed('forceBuild', self.request)
                 self.showPerf = yield self.authz.actionAllowed('prShowPerf', self.request)
+                self.showRevertOperation = yield self.authz.actionAllowed('prRevertBuild', self.request)
             yield mainThreadCall(fn)
         else:
             self.showOperations = False
@@ -190,7 +191,7 @@ class ApiData(AccessorMixin):
                         operations.append('restart')
                     if stopAvailable:
                         operations.append('stop')
-                    else:
+                    elif self.showRevertOperation:
                         operations.append('revert')
             else:
                 s['status'] = 'not_queued'
