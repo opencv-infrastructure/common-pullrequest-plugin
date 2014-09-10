@@ -159,6 +159,7 @@ class PullRequestsWatchLoop():
             bstatus.bid = bid
             bstatus.head_sha = head_sha
             yield pr.addBuildStatus(bstatus)
+        yield self.context.onUpdatePullRequest(prid)
 
 def _getInternalNameByBuilderName(context, builderName):
     for internal_name, b in context.builders.items():
@@ -409,6 +410,7 @@ class BuilderStatusReceiver():
                 bstatus.status = results
                 db.scc.updateStatus(bstatus)
             yield db.asyncRun(fn)
+            yield self.context.onPullRequestBuildFinished(prid, self.bid, builderName, build, results)
         except:
             log.err()
 

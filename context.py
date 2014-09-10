@@ -71,3 +71,9 @@ class Context:
 
     def getListOfAutomaticBuilders(self, pr):
         assert False
+
+    def onUpdatePullRequest(self, prid):
+        pass
+
+    def onPullRequestBuildFinished(self, prid, bid, builderName, build, results):
+        return self.onUpdatePullRequest(prid)
