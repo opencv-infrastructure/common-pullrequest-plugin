@@ -8,6 +8,7 @@ import json, urllib, urllib2
 
 from twisted.web.client import Agent, readBody
 from twisted.internet import defer, reactor
+from twisted.python import log, failure
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IBodyProducer
 from zope.interface.declarations import implements
@@ -82,11 +83,11 @@ class GitHub(object):
                 request.add_header('Content-Type', 'application/x-www-form-urlencoded')
             try:
                 response = urllib2.build_opener(urllib2.HTTPSHandler).open(request, timeout=TIMEOUT)
-                isValid = self._parse_headers(response.headers)
+                isValid = _parse_headers(self, response.headers)
                 if isValid:
                     return json.loads(response.read())
             except urllib2.HTTPError, e:
-                isValid = self._parse_headers(e.headers)
+                isValid = _parse_headers(self, e.headers)
                 if isValid:
                     json_data = json.loads(e.read())
                 req = dict(method=method, url=url)
@@ -110,7 +111,7 @@ class GitHub(object):
                     resp_headers = {}
                     for k in response.headers._rawHeaders:
                         resp_headers[k] = response.headers._rawHeaders[k][0];
-                    isValid = self._parse_headers(resp_headers)
+                    isValid = _parse_headers(self, resp_headers)
                     if isValid:
                         body = yield readBody(response)
                         defer.returnValue(json.loads(body))
@@ -140,7 +141,7 @@ class GitHub(object):
                     resp_headers = {}
                     for k in response.headers._rawHeaders:
                         resp_headers[k] = response.headers._rawHeaders[k][0];
-                    isValid = self._parse_headers(resp_headers)
+                    isValid = _parse_headers(self, resp_headers)
                     if isValid:
                         body = yield readBody(response)
                         defer.returnValue(json.loads(body))
@@ -180,3 +181,45 @@ class GitHub(object):
                 return self
             name = '%s/%s' % (self._path, '/'.join([str(arg) for arg in args]))
             return self._client._Entry(self._client, name)
+
+
+from pprint import pprint
+
+'''
+Commit status updater
+'''
+class GitHubCommitStatus(object):
+
+    def __init__(self, client, username, repo, context='default'):
+        self.client = client
+        self.username = username
+        self.repo = repo
+        self.context = context
+
+    @defer.inlineCallbacks
+    def updateCommit(self, sha, state, description, url, context=None):
+        if context is None:
+            context = self.context
+        result = None
+        try:
+            need_update = True
+            try:
+                current_statuses = yield self.client.repos(self.username)(self.repo).statuses(sha).get()
+                if self.client.status == 200:
+                    for s in current_statuses:
+                        if s['context'] == context:
+                            if s['state'] == state and s['description'] == description and s['target_url'] == url:
+                                log.msg('Commit status update for %s is NOT required' % sha)
+                                return
+                            break
+                    log.msg('Commit status update for %s is needed' % sha)
+            except:
+                log.err(failure.Failure(), 'while receiving old commit status')
+                pass
+
+            result = yield self.client.repos(self.username)(self.repo).statuses(sha).post(state=state, target_url=url, description=description, context=context)
+            log.msg('Commit status for %s is updated to "%s":"%s"' % (sha, state, description))
+        except:
+            log.err(failure.Failure(), 'while updating commit status')
+            pass
+        defer.returnValue(result)
