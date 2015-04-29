@@ -45,16 +45,22 @@ class Context:
         except ValueError:
             return None
 
-    def extractParameter(self, desc, nameFilter):
+    def validateParameterValue(self, v):
+        for s in v:
+            if not s.isdigit() and not s.isalpha() and s != ',' and s != '-' and s != '_' and s != ':' and s != '*' and s != '\\'  and s != '/':
+                raise ValueError('Parameter check failed: %s' % v)
+
+    def extractParameter(self, desc, nameFilter, validationFn=None):
         if not desc:
             return None
         if re.search(nameFilter + r'=', desc):
             m = re.search(nameFilter + r'=([^\r\n\t\s`]*)(\r|\n|`|$)', desc)
             if m:
                 v = m.group(1)
-                for s in v:
-                    if not s.isdigit() and not s.isalpha() and s != ',' and s != '-' and s != '_' and s != ':' and s != '*' and s != '\\'  and s != '\/':
-                        raise ValueError('Parameter check failed: %s' % v)
+                if validationFn is None:
+                    self.validateParameterValue(v)
+                else:
+                    validationFn(v)
                 return v
         return None
 

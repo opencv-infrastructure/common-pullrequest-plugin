@@ -254,6 +254,8 @@ def tryScheduleForBuilder(context, builderName, resetScheduledBuilds=True):
                 yield db.scc.updateStatus(prb_status)
             except:
                 log.err()
+                prb_status.status = BuildStatus.EXCEPTION
+                yield db.scc.updateStatus(prb_status)
 
     finally:
         schedulerLock.release()
