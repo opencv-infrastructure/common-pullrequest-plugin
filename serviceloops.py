@@ -190,7 +190,7 @@ def tryScheduleForBuilder(context, builderName, resetScheduledBuilds=True):
             assert isinstance(builder, Builder)
             builder_status = builder.builder_status
             assert isinstance(builder_status, BuilderStatus)
-            if builder_status.currentBigState != 'idle':
+            if builder_status.currentBigState == 'offline':
                 return
             pending = yield builder_status.getPendingBuildRequestStatuses()
             if len(pending) > 0:
