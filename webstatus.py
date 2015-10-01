@@ -1,3 +1,5 @@
+import os.path
+
 from twisted.python import log
 from twisted.python.failure import Failure
 from twisted.internet import defer
@@ -21,9 +23,13 @@ class WebStatus(baseweb.WebStatus):
         baseweb.WebStatus.setupUsualPages(self, numbuilds, num_events, num_events_max)
         for context in self.pullrequests:
             self.putChild(context.urlpath, PullRequestsResource(context=context))
-        self.putChild('pullrequest', StaticFile('pullrequest_ui/src'));
-        self.putChild('login', LoginResource());
-        self.putChild('authInfo', AuthInfoResource());
+        pullrequest_ui_dir = 'pullrequest_ui/src'
+        if os.path.exists(os.path.join(os.path.dirname(__file__), '../pullrequest_ui/dist')):
+            pullrequest_ui_dir = 'pullrequest_ui/dist'
+        print('Pullrequest UI dir: %s' % pullrequest_ui_dir)
+        self.putChild('pullrequest', StaticFile(pullrequest_ui_dir))
+        self.putChild('login', LoginResource())
+        self.putChild('authInfo', AuthInfoResource())
 
 
 class LoginResource(resource.Resource, AccessorMixin):
