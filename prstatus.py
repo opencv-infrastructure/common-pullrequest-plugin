@@ -328,6 +328,8 @@ class PullRequestsResource(JsonResource):
         try:
             if path == '':
                 return self
+            if path == 'status':
+                return PullRequestsStatusResource(self.context)
             prid = path
             return OnePullRequestResource(self.context, prid)
         except KeyError:
@@ -371,6 +373,28 @@ class OnePullRequestStatusResource(JsonResource):
             yield apiData.initialize(publicOnly=True)
 
             result = yield apiData.getPullrequestStatusShort(prid=self.prid)
+            defer.returnValue(result)
+        result = yield self.context.db.asyncRun(fn)
+        defer.returnValue(result)
+
+# for merge service
+class PullRequestsStatusResource(JsonResource):
+    def __init__(self, context):
+        JsonResource.__init__(self)
+        self.context = context
+
+    @defer.inlineCallbacks
+    def asDict(self, request):
+        def fn(_):
+            apiData = ApiData(self.context, request)
+            yield apiData.initialize(publicOnly=True)
+
+            result = {}
+            result['pullrequests'] = {}
+            for pr in apiData.active_pullrequests:
+                pr_status = yield apiData.getPullrequestStatusShort(prid=pr.prid)
+                result['pullrequests'][pr.prid] = pr_status
+
             defer.returnValue(result)
         result = yield self.context.db.asyncRun(fn)
         defer.returnValue(result)
