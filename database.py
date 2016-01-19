@@ -256,10 +256,10 @@ class Pullrequest(Base, BaseMixin):
             assert not status in ss
             ss = [s for s in ss if s.active and s.bid == status.bid]
             if len(ss) > 0:
-                logger.info('Leave active PR build status: %s' % repr(status))
+                # logger.info('Leave active PR build status: %s' % repr(status))
                 for s in ss:
                     s.active = False
-                    logger.info('Deactivate PR build status: %s' % repr(s))
+                    # logger.info('Deactivate PR build status: %s' % repr(s))
             self._buildstatus.append(status)
             session.commit()
         self.getContext().db.asyncRun(fn)

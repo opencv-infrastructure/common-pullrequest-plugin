@@ -361,6 +361,7 @@ class BuilderStatusReceiver():
                 b = builder.getBuild(build.number)
                 bstatus = db.scc.getStatusForBuildRequest(prid, self.bid, b.requests[0].id)
                 if not bstatus:  # TODO Workaround
+                    logger.warning("buildStarted(%s): #PR%s: can't find build status. Ignore" % (builderName, prid))
                     return
                 sha = properties.getProperty('head_sha', None)
                 if sha != bstatus.head_sha:
@@ -429,10 +430,17 @@ class BuilderStatusReceiver():
                 return
             db = self.context.db
             def fn(session):
-                # pr = yield db.prcc.getPullRequest(prid)
+                pr = yield db.prcc.getPullRequest(prid)
                 bstatus = db.scc.getStatusForBuildRequest(prid, self.bid, request.brid)
                 if not bstatus:
-                    logger.warning("requestSubmitted(%s): #PR%s: can't find build status. Ignore" % (request.buildername, prid))
+                    logger.info("requestSubmitted(%s #%d): #PR%s: adding new builder status" % (request.buildername, request.brid, prid))
+                    bstatus = database.Status()
+                    bstatus.active = True
+                    bstatus.status = BuildStatus.SCHEDULED
+                    bstatus.bid = self.bid
+                    bstatus.brid = request.brid
+                    bstatus.head_sha = properties.getProperty('head_sha', None)
+                    yield pr.addBuildStatus(bstatus)
                     return
                 sha = properties.getProperty('head_sha', None)
                 if sha != bstatus.head_sha:
