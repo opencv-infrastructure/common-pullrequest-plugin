@@ -107,7 +107,8 @@ class GitLab(object):
                 def asyncPost():
                     agent = Agent(reactor)
                     headers = {'User-Agent':[self.userAgent],
-                               'PRIVATE-TOKEN':[self._private_token]}
+                               'PRIVATE-TOKEN':[self._private_token],
+                               'Content-Type': ['application/json']}
                     class StringProducer(object):
                         implements(IBodyProducer)
                         def __init__(self):
