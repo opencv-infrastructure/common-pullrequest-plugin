@@ -341,7 +341,7 @@ class Status(Base, BaseMixin):
         return session.query(Status)
 
     def __repr__(self):
-        return "<Status(%s,prid=%s,bid=%s,active=%s,build_number=%s...)>" % (self.sid, self.prid. self.bid, self.active, self.build_number)
+        return "<Status(%s,prid=%s,bid=%s,active=%s,build_number=%s...)>" % (self.sid, self.prid, self.bid, self.active, self.build_number)
 
 Status.register()
 
