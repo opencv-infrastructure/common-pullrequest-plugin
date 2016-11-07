@@ -4,16 +4,21 @@
 Client for GitHub API v3
 '''
 
-import json, urllib, urllib2
+import os, json, urllib, urllib2
+from urlparse import urlparse
 
-from twisted.web.client import Agent, readBody
+from twisted.web.client import Agent, ProxyAgent, readBody
 from twisted.internet import defer, reactor
+from twisted.internet.endpoints import TCP4ClientEndpoint
 from twisted.python import log, failure
 from twisted.web.http_headers import Headers
 from twisted.web.iweb import IBodyProducer
 from zope.interface.declarations import implements
 
+from twisted_connect import HTTPProxyConnector
+
 GITHUB_URL = 'https://api.github.com'
+HTTPS_CONNECT=True
 TIMEOUT = 60
 
 # Exception base class
@@ -27,6 +32,20 @@ class Error(Exception):
 # 404 Exception
 class ErrorNotFound(Error):
     pass
+
+def getAgent(reactor):
+    http_proxy = os.environ.get('http_proxy', None)
+    if http_proxy:
+        c = urlparse(http_proxy)
+        if HTTPS_CONNECT:
+            proxy = HTTPProxyConnector(proxy_host=c.hostname, proxy_port=c.port)
+            agent = Agent(reactor=proxy)
+        else:
+            endpoint = TCP4ClientEndpoint(reactor, c.hostname, c.port)
+            agent = ProxyAgent(endpoint)
+        return agent
+    return Agent(reactor)
+
 
 class GitHub(object):
 
@@ -100,7 +119,7 @@ class GitHub(object):
             if method in ['GET', 'DELETE']:
                 @defer.inlineCallbacks
                 def asyncGet():
-                    agent = Agent(reactor)
+                    agent = getAgent(reactor)
                     headers = {'User-Agent':[self.userAgent]}
                     if self._authorization:
                         headers['Authorization'] = [self._authorization]
@@ -120,7 +139,7 @@ class GitHub(object):
             if method in ['POST', 'PATCH', 'PUT']:
                 @defer.inlineCallbacks
                 def asyncPost():
-                    agent = Agent(reactor)
+                    agent = getAgent(reactor)
                     headers = {'User-Agent':[self.userAgent]}
                     if self._authorization:
                         headers['Authorization'] = [self._authorization]
