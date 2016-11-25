@@ -46,28 +46,50 @@ class Context:
             return None
 
     def validateParameterValue(self, v):
+        if re.search(r'\\[^a-zA-Z0-9_]', v):
+            raise ValueError('Parameter check failed (escape rule): "%s"' % v)
         for s in v:
-            if not s.isdigit() and not s.isalpha() and s != ',' and s != '-' and s != '_' and s != ':' and s != '*' and s != '\\'  and s != '/':
-                raise ValueError('Parameter check failed: %s' % v)
+            if not s.isdigit() and not s.isalpha() and s != ',' and s != '-' and s != '_' and s != ':' and s != '.' and s != '*' and s != '\\'  and s != '/':
+                raise ValueError('Parameter check failed: "%s"' % v)
 
-    def extractParameter(self, desc, nameFilter, validationFn=None):
+    def validateParameter(self, name, value):
+        try:
+            self.validateParameterValue(value)
+        except ValueError as e:
+            raise ValueError('Parameter "%s"="%s": %s' % (name, value, re.sub('^Parameter ', '', str(e))))
+        return value
+
+    def extractParameterEx(self, desc, nameFilter, validationFn=None):
         if not desc:
             return None
         if re.search(nameFilter + r'=', desc):
-            m = re.search(nameFilter + r'=([^\r\n\t\s`]*)(\r|\n|`|$)', desc)
+            m = re.search(r'(^|`|\n|\r)(?P<name>' + nameFilter + r')=(?P<value>[^\r\n\t\s`]*)(\r|\n|`|$)', desc)
             if m:
-                v = m.group(1)
+                name = m.group('name')
+                value = m.group('value')
                 if validationFn is None:
-                    self.validateParameterValue(v)
+                    value = self.validateParameter(name, value)
                 else:
-                    validationFn(v)
-                return v
+                    value = validationFn(name, value)
+                return (name, value)
         return None
 
+    def extractParameter(self, desc, nameFilter, validationFn=None):
+        def validationFnWrap(name, value):
+            validationFn(value)
+            return value
+        res = self.extractParameterEx(desc, nameFilter, None if validationFn is None else validationFnWrap)
+        if res is None:
+            return None
+        return res[1]
+
     def pushBuildProperty(self, properties, desc, nameFilter, propertyName):
-        v = self.extractParameter(desc, nameFilter)
+        v = self.extractParameterEx(desc, nameFilter)
         if v is not None:
-            properties.setProperty(propertyName, v, 'Pull request')
+            print("%s: Apply property '%s'='%s' (from field '%s')" % (self.name, propertyName, v[1], v[0]))
+            properties.setProperty(propertyName, v[1], 'Pull request')
+            return v
+        return None
 
     def getListOfAutomaticBuilders(self, pr):
         assert False
