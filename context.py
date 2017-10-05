@@ -49,7 +49,7 @@ class Context:
         if re.search(r'\\[^a-zA-Z0-9_]', v):
             raise ValueError('Parameter check failed (escape rule): "%s"' % v)
         for s in v:
-            if not s.isdigit() and not s.isalpha() and s != ',' and s != '-' and s != '_' and s != ':' and s != '.' and s != '*' and s != '\\'  and s != '/':
+            if not s.isdigit() and not s.isalpha() and s != ',' and s != '-' and s != '+' and s != '_' and s != ':' and s != '.' and s != '*' and s != '\\'  and s != '/':
                 raise ValueError('Parameter check failed: "%s"' % v)
 
     def validateParameter(self, name, value):
