@@ -59,11 +59,12 @@ class Context:
             raise ValueError('Parameter "%s"="%s": %s' % (name, value, re.sub('^Parameter ', '', str(e))))
         return value
 
-    def extractParameterEx(self, desc, nameFilter, validationFn=None):
+    def extractParameterEx(self, desc, nameFilter, validationFn=None, allowSpaces=False):
         if not desc:
             return None
         if re.search(nameFilter + r'=', desc):
-            m = re.search(r'(^|`|\n|\r)(?P<name>' + nameFilter + r')=(?P<value>[^\r\n\t\s`]*)(\r|\n|`|$)', desc)
+            forbidSpaces = '' if allowSpaces else r'\s'
+            m = re.search(r'(^|`|\n|\r)(?P<name>' + nameFilter + r')=(?P<value>[^\r\n\t' + forbidSpaces + '`]*)(\r|\n|`|$)', desc)
             if m:
                 name = m.group('name')
                 value = m.group('value')

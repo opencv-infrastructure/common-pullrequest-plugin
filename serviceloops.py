@@ -135,7 +135,11 @@ class PullRequestsWatchLoop():
 
         active_builders = yield db.bcc.getActiveBuilders()
         pr = yield db.prcc.getPullRequest(prid);
-        queueBuilders = self.context.getListOfAutomaticBuilders(pr)
+        try:
+            queueBuilders = self.context.getListOfAutomaticBuilders(pr)
+        except:
+            log.err()
+            queueBuilders = []
         testFilter = self.context.extractRegressionTestFilter(pr.description)
         for b in active_builders:
             bid = b.bid
