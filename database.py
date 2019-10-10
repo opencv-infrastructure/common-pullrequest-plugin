@@ -369,6 +369,16 @@ class Database():
 
         Base.metadata.create_all(self.engine)
 
+        # TODO: use DB migrations
+        try:
+            sa.Index('pullrequest_status', Pullrequest.status).create(self.engine)
+            sa.Index('status_active', Status.active).create(self.engine)
+            sa.Index('status_prid', Status.prid).create(self.engine)
+            sa.Index('status_bid', Status.bid).create(self.engine)
+        except:
+            # already exists
+            pass
+
     def _createSession(self):
         # :rtype sqlalchemy.orm.session.Session
         return self.Session()
@@ -507,7 +517,9 @@ class StatusConnectorComponent():
 
     def getAllActiveStatuses(self):
         def thd(session):
-            ss = session.query(Status).filter(Status.active == True).all()
+            ss = session.query(Status).filter(Status.active == True)\
+                    .join(Pullrequest).filter(Pullrequest.status >= 0)\
+                    .all()
             return ss
         return self.db.asyncRun(thd)
 
