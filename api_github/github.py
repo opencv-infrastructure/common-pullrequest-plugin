@@ -109,6 +109,8 @@ class GitHub(object):
                 isValid = _parse_headers(self, e.headers)
                 if isValid:
                     json_data = json.loads(e.read())
+                else:
+                    json_data = None
                 req = dict(method=method, url=url)
                 resp = dict(code=e.code, json=json_data)
                 if resp['code'] == 404:
